@@ -6,12 +6,12 @@ type MemoryStorage struct {
 
 var AppMemoryStorage IURLStogare = MemoryStorage{urls: make(map[string]string)}
 
-func (storage MemoryStorage) TryGetFullURL(key string) (isFound bool, value string) {
-	value = storage.urls[key]
-	return value != "", value
+func (storage MemoryStorage) TryGetFullURL(key string) (bool, string) {
+	value, found := storage.urls[key]
+	return found, value
 }
 
-func (storage MemoryStorage) TryGetShortKey(fullURL string) (isFound bool, value string) {
+func (storage MemoryStorage) TryGetShortKey(fullURL string) (bool, string) {
 	for key, value := range storage.urls {
 		if value == fullURL {
 			return true, key
