@@ -11,7 +11,7 @@ func main() {
 	mux := http.NewServeMux()
 	routes.ConfigureRoutes(mux)
 
-	err := http.ListenAndServe(configuration.AppUrl, mux)
+	err := http.ListenAndServe(configuration.AppURL, mux)
 	if err != nil {
 		panic(err)
 	}

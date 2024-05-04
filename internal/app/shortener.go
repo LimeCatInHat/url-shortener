@@ -6,7 +6,7 @@ import (
 	"github.com/LimeCatInHat/url-shortener/internal/utils"
 )
 
-var appStorage storage.IUrlStogare = storage.AppMemoryStorage
+var appStorage storage.IURLStogare = storage.AppMemoryStorage
 
 func ShortenUrl(url []byte) string {
 	isFound, value := appStorage.TryGetShortKey(string(url))
@@ -15,15 +15,15 @@ func ShortenUrl(url []byte) string {
 	}
 	key := utils.GenerateKey(url)
 
-	appStorage.SaveUrlByShortKey(key, string(url))
+	appStorage.SaveURLByShortKey(key, string(url))
 
 	return getShortenUrl(key)
 }
 
 func TryGetFullUrl(key []byte) (bool, string) {
-	return appStorage.TryGetFullUrl(string(key))
+	return appStorage.TryGetFullURL(string(key))
 }
 
 func getShortenUrl(key string) string {
-	return configuration.ShortenLinksBaseUrl + key
+	return configuration.ShortenLinksBaseURL + key
 }

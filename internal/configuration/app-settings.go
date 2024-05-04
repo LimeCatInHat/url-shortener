@@ -1,4 +1,4 @@
 package configuration
 
-const AppUrl = ":8080"
-const ShortenLinksBaseUrl = "http://localhost:8080/"
+const AppURL = ":8080"
+const ShortenLinksBaseURL = "http://localhost:8080/"
