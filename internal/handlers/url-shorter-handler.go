@@ -13,7 +13,7 @@ type requestValidationResult struct {
 	responseStatusCode int
 }
 
-func UrlShorterHandler(writer http.ResponseWriter, request *http.Request) {
+func URLShorterHandler(writer http.ResponseWriter, request *http.Request) {
 	validationResult := validateShorterHandlerRequest(request)
 	if !validationResult.isValid {
 		http.Error(writer, validationResult.message, validationResult.responseStatusCode)

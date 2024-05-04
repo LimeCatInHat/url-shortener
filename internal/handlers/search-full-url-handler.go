@@ -7,15 +7,15 @@ import (
 	"github.com/LimeCatInHat/url-shortener/internal/app"
 )
 
-func SearchFullUrlHandler(writer http.ResponseWriter, request *http.Request) {
+func SearchFullURLHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		http.Error(writer, "Invalid Http Method", http.StatusBadRequest)
 	}
 	isFound, shortKey := tryGetShortKeySegment(request)
 	if isFound {
-		isFound, fullUrl := app.TryGetFullURL([]byte(shortKey))
+		isFound, fullURL := app.TryGetFullURL([]byte(shortKey))
 		if isFound {
-			writer.Header().Add("Location", fullUrl)
+			writer.Header().Add("Location", fullURL)
 			writer.WriteHeader(http.StatusTemporaryRedirect)
 			return
 		}
