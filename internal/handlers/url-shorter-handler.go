@@ -35,7 +35,7 @@ func UrlShorterHandler(writer http.ResponseWriter, request *http.Request) {
 
 func validateShorterHandlerRequest(request *http.Request) requestValidationResult {
 	if request.Method != http.MethodPost {
-		return requestValidationResult{message: "Invalid Http Method", responseStatusCode: http.StatusMethodNotAllowed}
+		return requestValidationResult{message: "Invalid Http Method", responseStatusCode: http.StatusBadRequest}
 	}
 	if request.Header.Get("Content-Type") != "text/plain" {
 		return requestValidationResult{message: "Invalid Content-Type", responseStatusCode: http.StatusBadRequest}

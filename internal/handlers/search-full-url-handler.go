@@ -9,7 +9,7 @@ import (
 
 func SearchFullUrlHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
-		http.Error(writer, "Invalid Http Method", http.StatusMethodNotAllowed)
+		http.Error(writer, "Invalid Http Method", http.StatusBadRequest)
 	}
 	isFound, shortKey := tryGetShortKeySegment(request)
 	if isFound {
