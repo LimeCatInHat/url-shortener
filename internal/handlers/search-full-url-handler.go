@@ -13,7 +13,7 @@ func SearchFullUrlHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	isFound, shortKey := tryGetShortKeySegment(request)
 	if isFound {
-		isFound, fullUrl := app.TryGetFullUrl([]byte(shortKey))
+		isFound, fullUrl := app.TryGetFullURL([]byte(shortKey))
 		if isFound {
 			writer.Header().Add("Location", fullUrl)
 			writer.WriteHeader(http.StatusTemporaryRedirect)

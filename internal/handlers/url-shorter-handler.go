@@ -26,7 +26,7 @@ func UrlShorterHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	urlResult := app.ShortenUrl(body)
+	urlResult := app.ShortenURL(body)
 
 	writer.Header().Add("Content-Type", "text/plain")
 	writer.WriteHeader(http.StatusCreated)

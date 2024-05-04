@@ -8,22 +8,22 @@ import (
 
 var appStorage storage.IURLStogare = storage.AppMemoryStorage
 
-func ShortenUrl(url []byte) string {
+func ShortenURL(url []byte) string {
 	isFound, value := appStorage.TryGetShortKey(string(url))
 	if isFound {
-		return getShortenUrl(value)
+		return getShortenURL(value)
 	}
 	key := utils.GenerateKey(url)
 
 	appStorage.SaveURLByShortKey(key, string(url))
 
-	return getShortenUrl(key)
+	return getShortenURL(key)
 }
 
-func TryGetFullUrl(key []byte) (bool, string) {
+func TryGetFullURL(key []byte) (bool, string) {
 	return appStorage.TryGetFullURL(string(key))
 }
 
-func getShortenUrl(key string) string {
+func getShortenURL(key string) string {
 	return configuration.ShortenLinksBaseURL + key
 }
