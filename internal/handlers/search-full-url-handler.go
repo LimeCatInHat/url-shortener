@@ -21,7 +21,7 @@ func SearchFullURLHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	http.Error(writer, "", http.StatusNotFound)
+	http.Error(writer, "", http.StatusBadRequest)
 }
 
 func tryGetShortKeySegment(request *http.Request) (bool, string) {

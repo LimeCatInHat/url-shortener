@@ -8,6 +8,10 @@ import (
 
 var appStorage storage.IURLStogare = storage.AppMemoryStorage
 
+func ConfigureStorage(storage storage.IURLStogare) {
+	appStorage = storage
+}
+
 func ShortenURL(url []byte) string {
 	isFound, value := appStorage.TryGetShortKey(string(url))
 	if isFound {
