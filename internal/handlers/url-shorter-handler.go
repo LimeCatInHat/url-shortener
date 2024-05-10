@@ -7,16 +7,9 @@ import (
 	"github.com/LimeCatInHat/url-shortener/internal/app"
 )
 
-type requestValidationResult struct {
-	isValid            bool
-	message            string
-	responseStatusCode int
-}
-
 func URLShorterHandler(writer http.ResponseWriter, request *http.Request) {
-	validationResult := validateShorterHandlerRequest(request)
-	if !validationResult.isValid {
-		http.Error(writer, validationResult.message, validationResult.responseStatusCode)
+	if request.ContentLength == 0 {
+		http.Error(writer, "Invalid Content Length", http.StatusBadRequest)
 		return
 	}
 
@@ -31,15 +24,4 @@ func URLShorterHandler(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Add("Content-Type", "text/plain")
 	writer.WriteHeader(http.StatusCreated)
 	writer.Write([]byte(urlResult))
-}
-
-func validateShorterHandlerRequest(request *http.Request) requestValidationResult {
-	if request.Method != http.MethodPost {
-		return requestValidationResult{message: "Invalid Http Method", responseStatusCode: http.StatusBadRequest}
-	}
-	if request.ContentLength == 0 {
-		return requestValidationResult{message: "Invalid Content Length", responseStatusCode: http.StatusBadRequest}
-	}
-
-	return requestValidationResult{isValid: true}
 }

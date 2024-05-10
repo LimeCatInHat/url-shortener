@@ -8,10 +8,9 @@ import (
 )
 
 func main() {
-	mux := http.NewServeMux()
-	routes.ConfigureRoutes(mux)
+	r := routes.ConfigureRouter()
 
-	err := http.ListenAndServe(configuration.AppURL, mux)
+	err := http.ListenAndServe(configuration.AppURL, r)
 	if err != nil {
 		panic(err)
 	}
