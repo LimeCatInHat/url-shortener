@@ -1,14 +1,15 @@
 package handlers
 
 import (
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/LimeCatInHat/url-shortener/internal/app"
 	"github.com/LimeCatInHat/url-shortener/internal/storage"
+	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,6 +32,9 @@ type response struct {
 }
 
 func TestURLShorterHandler(t *testing.T) {
+	srv := configureServer()
+	defer srv.Close()
+
 	tests := []searchURLTestDescriptor{{
 		name: "successful shortlink generation",
 		request: request{
@@ -46,13 +50,13 @@ func TestURLShorterHandler(t *testing.T) {
 			},
 		},
 	}, {
-		name: "bad request because of method type",
+		name: "only POST method type is supported",
 		request: request{
 			method: http.MethodGet,
 			path:   "/",
 		},
 		want: response{
-			statusCode: http.StatusBadRequest,
+			statusCode: http.StatusMethodNotAllowed,
 		},
 	}, {
 		name: "bad request because of empty body",
@@ -66,24 +70,21 @@ func TestURLShorterHandler(t *testing.T) {
 	}}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			request := createTestRequest(test.request)
+			req := buildRequest(srv, test.request)
+			res, err := req.Send()
+			require.NoError(t, err)
 
-			w := httptest.NewRecorder()
-			URLShorterHandler(w, request)
+			require.Equal(t, test.want.statusCode, res.StatusCode())
 
-			res := w.Result()
-
-			require.Equal(t, test.want.statusCode, res.StatusCode)
-
-			if res.StatusCode <= 299 {
-				defer res.Body.Close()
-				resBody, err := io.ReadAll(res.Body)
+			if res.StatusCode() <= 299 {
+				resBody := res.Body()
 				require.NoError(t, err)
 				assert.Equal(t, len(test.want.body) > 0, len(resBody) > 0)
 
 				if test.want.headers != nil {
+					headers := res.Header()
 					for headerKey, headerValue := range test.want.headers {
-						assert.Equal(t, headerValue, res.Header.Get(headerKey))
+						assert.Equal(t, headerValue, headers.Get(headerKey))
 					}
 				}
 			}
@@ -92,6 +93,10 @@ func TestURLShorterHandler(t *testing.T) {
 }
 
 func TestSearchFullURLHandler(t *testing.T) {
+	configureMemoryStorage(map[string]string{"1e3271ede129813": "https://yandex.ru/"})
+	srv := configureServer()
+	defer srv.Close()
+
 	tests := []searchURLTestDescriptor{{
 		name: "found link",
 		request: request{
@@ -105,67 +110,57 @@ func TestSearchFullURLHandler(t *testing.T) {
 			},
 		},
 	}, {
-		name: "bad request because of incorrect http method",
+		name: "only get requests methods allowed",
 		request: request{
 			method: http.MethodPost,
 			path:   "/1e3271ede129813",
 		},
 		want: response{
-			statusCode: http.StatusBadRequest,
+			statusCode: http.StatusMethodNotAllowed,
 		},
 	}, {
-		name: "bad request because of empty key",
+		name: "not allowed with empty key",
 		request: request{
 			method: http.MethodGet,
 			path:   "/",
 		},
 		want: response{
-			statusCode: http.StatusBadRequest,
+			statusCode: http.StatusMethodNotAllowed,
 		},
 	}, {
-		name: "bad request because of to many segments",
+		name: "not found because of to many segments",
 		request: request{
 			method: http.MethodGet,
 			path:   "/1e3271ede129813/extrakey",
 		},
 		want: response{
-			statusCode: http.StatusBadRequest,
+			statusCode: http.StatusNotFound,
 		},
 	}}
-
-	configureMemoryStorage(map[string]string{"1e3271ede129813": "https://yandex.ru/"})
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			request := httptest.NewRequest(test.request.method, test.request.path, nil)
+			req := buildRequest(srv, test.request)
 
-			w := httptest.NewRecorder()
-			SearchFullURLHandler(w, request)
+			res, err := req.Send()
+			require.NoError(t, err)
+			require.Equal(t, test.want.statusCode, res.StatusCode())
 
-			res := w.Result()
-
-			require.Equal(t, test.want.statusCode, res.StatusCode)
-
-			if res.StatusCode <= 299 {
-				defer res.Body.Close()
-				resBody, err := io.ReadAll(res.Body)
+			if res.StatusCode() <= 299 {
+				resBody := res.Body()
 				require.NoError(t, err)
 				assert.Equal(t, len(test.want.body) > 0, len(resBody) > 0)
 
 				if test.want.headers != nil {
+					headers := res.Header()
 					for headerKey, headerValue := range test.want.headers {
-						assert.Equal(t, headerValue, res.Header.Get(headerKey))
+						assert.Equal(t, headerValue, headers.Get(headerKey))
 					}
 				}
 			}
 		})
 	}
-}
-
-func createTestRequest(testRequestData request) *http.Request {
-	bodyReader := strings.NewReader(testRequestData.body)
-	return httptest.NewRequest(testRequestData.method, testRequestData.path, bodyReader)
 }
 
 func configureMemoryStorage(records map[string]string) {
@@ -174,4 +169,33 @@ func configureMemoryStorage(records map[string]string) {
 	for itemKey, itemValue := range records {
 		stor.SaveURLByShortKey(itemKey, itemValue)
 	}
+}
+
+func configureServer() *httptest.Server {
+	r := chi.NewRouter()
+	r.Use(middleware.URLFormat)
+	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
+		URLShorterHandler(writer, request)
+	})
+	r.Get("/{key}", func(writer http.ResponseWriter, request *http.Request) {
+		SearchFullURLHandler(writer, request)
+	})
+	return httptest.NewServer(r)
+}
+
+func buildRequest(srv *httptest.Server, testRequest request) *resty.Request {
+	client := resty.New().SetRedirectPolicy(noRedirectCustomPolicy())
+	req := client.R()
+	req.Method = testRequest.method
+	req.URL = srv.URL + testRequest.path
+	if testRequest.body != "" {
+		req.Body = testRequest.body
+	}
+	return req
+}
+
+func noRedirectCustomPolicy() resty.RedirectPolicy {
+	return resty.RedirectPolicyFunc(func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	})
 }
