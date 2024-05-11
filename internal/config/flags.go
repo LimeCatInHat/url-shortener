@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"flag"
+	"net"
 	"net/url"
 	"strconv"
 	"strings"
@@ -38,19 +39,43 @@ func SetConfiguration() {
 	flag.Parse()
 }
 
-func getAddr(value string, addTrailingSlashToFullUrl bool) (string, error) {
-	portString, isPort := strings.CutPrefix(value, ":")
-	if isPort {
-		_, err := strconv.Atoi(portString)
-		return value, err
+func getAddr(value string, needTrailingSlash bool) (string, error) {
+	result, err := getIpBasedAddress(value)
+	if err == nil {
+		return result, nil
 	}
-	url, err := url.Parse(value)
+	return getWellFormedRequestURL(value, needTrailingSlash)
+}
+
+func getIpBasedAddress(value string) (string, error) {
+	parts := strings.Split(value, ":")
+	if len(parts) == 1 {
+		ip := net.ParseIP(parts[0])
+		if ip != nil {
+			return value, nil
+		}
+		return value, errors.New("no ip address")
+	}
+	if len(parts) == 2 {
+		_, err := strconv.Atoi(parts[1])
+		if err == nil {
+			isValid := parts[0] == "" || net.ParseIP(parts[0]) != nil
+			if isValid {
+				return value, nil
+			}
+		}
+	}
+	return value, errors.New("no ip address")
+}
+
+func getWellFormedRequestURL(value string, needTrailingSlash bool) (string, error) {
+	url, err := url.ParseRequestURI(value)
 	isCorrect := err == nil && url.Host != ""
 	if !isCorrect {
 		return value, errors.New("invalid url")
 	}
 	result := url.String()
-	if !addTrailingSlashToFullUrl || strings.HasSuffix(result, "/") {
+	if !needTrailingSlash || strings.HasSuffix(result, "/") {
 		return result, nil
 	}
 
