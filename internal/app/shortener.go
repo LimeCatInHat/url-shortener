@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/LimeCatInHat/url-shortener/internal/configuration"
+	"github.com/LimeCatInHat/url-shortener/internal/config"
 	"github.com/LimeCatInHat/url-shortener/internal/storage"
 	"github.com/LimeCatInHat/url-shortener/internal/utils"
 )
@@ -29,5 +29,5 @@ func TryGetFullURL(key []byte) (bool, string) {
 }
 
 func getShortenURL(key string) string {
-	return configuration.ShortenLinksBaseURL + key
+	return config.AppSettings.ShortenLinksBaseURL + key
 }
