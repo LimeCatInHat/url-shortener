@@ -22,8 +22,8 @@ var AppSettings = AppConfiguration{
 
 func SetConfiguration() {
 	parseFlags()
-	setServerVariableValue("SERVER_ADDRESS", &AppSettings.SrvAddr)
-	setServerVariableValue("BASE_URL", &AppSettings.ShortenLinksBaseURL)
+	setAddressFromServerVariable("SERVER_ADDRESS", &AppSettings.SrvAddr, false)
+	setAddressFromServerVariable("BASE_URL", &AppSettings.ShortenLinksBaseURL, true)
 }
 
 func parseFlags() {
@@ -46,9 +46,12 @@ func parseFlags() {
 	flag.Parse()
 }
 
-func setServerVariableValue(variableName string, configValueSource *string) {
+func setAddressFromServerVariable(variableName string, configValueSource *string, needTrailingSlash bool) {
 	if envValue := os.Getenv(variableName); envValue != "" {
-		*configValueSource = envValue
+		result, err := getAddr(envValue, needTrailingSlash)
+		if err == nil {
+			*configValueSource = result
+		}
 	}
 }
 
