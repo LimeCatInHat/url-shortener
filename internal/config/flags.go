@@ -40,18 +40,17 @@ func SetConfiguration() {
 }
 
 func getAddr(value string, needTrailingSlash bool) (string, error) {
-	result, err := getIpBasedAddress(value)
+	result, err := getIPBasedAddress(value)
 	if err == nil {
 		return result, nil
 	}
 	return getWellFormedRequestURL(value, needTrailingSlash)
 }
 
-func getIpBasedAddress(value string) (string, error) {
+func getIPBasedAddress(value string) (string, error) {
 	parts := strings.Split(value, ":")
 	if len(parts) == 1 {
-		ip := net.ParseIP(parts[0])
-		if ip != nil {
+		if isLocalHost(parts[0]) || net.ParseIP(parts[0]) != nil {
 			return value, nil
 		}
 		return value, errors.New("no ip address")
@@ -59,7 +58,7 @@ func getIpBasedAddress(value string) (string, error) {
 	if len(parts) == 2 {
 		_, err := strconv.Atoi(parts[1])
 		if err == nil {
-			isValid := parts[0] == "" || net.ParseIP(parts[0]) != nil
+			isValid := parts[0] == "" || isLocalHost(parts[0]) || net.ParseIP(parts[0]) != nil
 			if isValid {
 				return value, nil
 			}
@@ -80,4 +79,8 @@ func getWellFormedRequestURL(value string, needTrailingSlash bool) (string, erro
 	}
 
 	return result + "/", nil
+}
+
+func isLocalHost(value string) bool {
+	return value == "localhost"
 }
