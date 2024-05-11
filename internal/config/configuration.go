@@ -5,6 +5,7 @@ import (
 	"flag"
 	"net"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -20,6 +21,12 @@ var AppSettings = AppConfiguration{
 }
 
 func SetConfiguration() {
+	parseFlags()
+	setServerVariableValue("SERVER_ADDRESS", &AppSettings.SrvAddr)
+	setServerVariableValue("BASE_URL", &AppSettings.ShortenLinksBaseURL)
+}
+
+func parseFlags() {
 	flag.Func("a", "http server address", func(flagValue string) error {
 		value, err := getAddr(flagValue, false)
 		if err != nil {
@@ -37,6 +44,12 @@ func SetConfiguration() {
 		return nil
 	})
 	flag.Parse()
+}
+
+func setServerVariableValue(variableName string, configValueSource *string) {
+	if envValue := os.Getenv(variableName); envValue != "" {
+		*configValueSource = envValue
+	}
 }
 
 func getAddr(value string, needTrailingSlash bool) (string, error) {
