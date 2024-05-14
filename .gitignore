@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+*.sh
 
 # Test binary, built with `go test -c`
 *.test
@@ -21,3 +22,7 @@ vendor/
 # IDEs directories
 .idea
 .vscode
+golangci-lint
+.golangci.yml
+
+Makefile

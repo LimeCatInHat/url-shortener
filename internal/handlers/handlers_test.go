@@ -67,32 +67,13 @@ func TestURLShorterHandler(t *testing.T) {
 		},
 	}}
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := buildRequest(srv, test.request)
-			res, err := req.Send()
-			require.NoError(t, err)
-
-			require.Equal(t, test.want.statusCode, res.StatusCode())
-
-			if res.StatusCode() <= 299 {
-				resBody := res.Body()
-				require.NoError(t, err)
-				assert.Equal(t, len(test.want.body) > 0, len(resBody) > 0)
-
-				if test.want.headers != nil {
-					headers := res.Header()
-					for headerKey, headerValue := range test.want.headers {
-						assert.Equal(t, headerValue, headers.Get(headerKey))
-					}
-				}
-			}
-		})
+		runTest(t, srv, &test)
 	}
 }
 
 func TestSearchFullURLHandler(t *testing.T) {
-	storage := configureMemoryStorage(map[string]string{"1e3271ede129813": "https://yandex.ru/"})
-	srv := configureServer(storage)
+	stor := configureMemoryStorage(map[string]string{"1e3271ede129813": "https://yandex.ru/"})
+	srv := configureServer(stor)
 	defer srv.Close()
 
 	tests := []searchURLTestDescriptor{{
@@ -137,28 +118,32 @@ func TestSearchFullURLHandler(t *testing.T) {
 	}}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		runTest(t, srv, &test)
+	}
+}
 
-			req := buildRequest(srv, test.request)
+func runTest(t *testing.T, srv *httptest.Server, test *searchURLTestDescriptor) {
+	t.Helper()
+	t.Run(test.name, func(t *testing.T) {
+		req := buildRequest(srv, test.request)
 
-			res, err := req.Send()
+		res, err := req.Send()
+		require.NoError(t, err)
+		require.Equal(t, test.want.statusCode, res.StatusCode())
+
+		if res.StatusCode() <= 299 {
+			resBody := res.Body()
 			require.NoError(t, err)
-			require.Equal(t, test.want.statusCode, res.StatusCode())
+			assert.Equal(t, len(test.want.body) > 0, len(resBody) > 0)
 
-			if res.StatusCode() <= 299 {
-				resBody := res.Body()
-				require.NoError(t, err)
-				assert.Equal(t, len(test.want.body) > 0, len(resBody) > 0)
-
-				if test.want.headers != nil {
-					headers := res.Header()
-					for headerKey, headerValue := range test.want.headers {
-						assert.Equal(t, headerValue, headers.Get(headerKey))
-					}
+			if test.want.headers != nil {
+				headers := res.Header()
+				for headerKey, headerValue := range test.want.headers {
+					assert.Equal(t, headerValue, headers.Get(headerKey))
 				}
 			}
-		})
-	}
+		}
+	})
 }
 
 func configureMemoryStorage(records map[string]string) storage.MemoryStorage {
@@ -169,13 +154,13 @@ func configureMemoryStorage(records map[string]string) storage.MemoryStorage {
 	return stor
 }
 
-func configureServer(storage storage.URLStogare) *httptest.Server {
+func configureServer(stor storage.URLStogare) *httptest.Server {
 	r := chi.NewRouter()
 	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
-		URLShorterHandler(writer, request, storage)
+		URLShorterHandler(writer, request, stor)
 	})
 	r.Get("/{key}", func(writer http.ResponseWriter, request *http.Request) {
-		SearchFullURLHandler(writer, request, storage)
+		SearchFullURLHandler(writer, request, stor)
 	})
 	return httptest.NewServer(r)
 }

@@ -70,6 +70,7 @@ func getAddr(value string, needTrailingSlash bool) (string, error) {
 }
 
 func getIPBasedAddress(value string) (string, error) {
+	const maxValidPartsCount = 2
 	parts := strings.Split(value, ":")
 	if len(parts) == 1 {
 		if isLocalHost(parts[0]) || net.ParseIP(parts[0]) != nil {
@@ -77,7 +78,7 @@ func getIPBasedAddress(value string) (string, error) {
 		}
 		return value, fmt.Errorf(`ip address %q seems to be malformatted`, value)
 	}
-	if len(parts) == 2 {
+	if len(parts) == maxValidPartsCount {
 		_, err := strconv.Atoi(parts[1])
 		if err == nil {
 			isValid := parts[0] == "" || isLocalHost(parts[0]) || net.ParseIP(parts[0]) != nil
@@ -90,12 +91,12 @@ func getIPBasedAddress(value string) (string, error) {
 }
 
 func getWellFormedRequestURL(value string, needTrailingSlash bool) (string, error) {
-	url, err := url.ParseRequestURI(value)
-	isCorrect := err == nil && url.Host != ""
+	addr, err := url.ParseRequestURI(value)
+	isCorrect := err == nil && addr.Host != ""
 	if !isCorrect {
 		return value, fmt.Errorf(`%q is not valid URL`, value)
 	}
-	result := url.String()
+	result := addr.String()
 	if !needTrailingSlash || strings.HasSuffix(result, "/") {
 		return result, nil
 	}

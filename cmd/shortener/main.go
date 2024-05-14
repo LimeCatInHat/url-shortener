@@ -11,8 +11,8 @@ import (
 func main() {
 	configuration := config.Init()
 	r := routes.ConfigureRouter()
-
 	err := http.ListenAndServe(configuration.SrvAddr, r)
+
 	if err != nil {
 		log.Fatal(err)
 	}

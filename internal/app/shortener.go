@@ -10,23 +10,23 @@ import (
 
 const keyGenerationAttemptsLimit = 5
 
-func ShortenURL(url []byte, storage storage.URLStogare) (string, error) {
-	isFound, value := storage.TryGetShortKey(string(url))
+func ShortenURL(url []byte, stor storage.URLStogare) (string, error) {
+	isFound, value := stor.TryGetShortKey(string(url))
 	if isFound {
 		return getShortenURL(value), nil
 	}
 
-	key, err := generateNewKey(storage)
+	key, err := generateNewKey(stor)
 	if err != nil {
 		return "", err
 	}
 
-	storage.SaveURLByShortKey(key, string(url))
+	stor.SaveURLByShortKey(key, string(url))
 	return getShortenURL(key), nil
 }
 
-func TryGetFullURL(key []byte, storage storage.URLStogare) (bool, string) {
-	return storage.TryGetFullURL(string(key))
+func TryGetFullURL(key []byte, stor storage.URLStogare) (bool, string) {
+	return stor.TryGetFullURL(string(key))
 }
 
 func getShortenURL(key string) string {
@@ -34,10 +34,10 @@ func getShortenURL(key string) string {
 	return baseURL + key
 }
 
-func generateNewKey(storage storage.URLStogare) (string, error) {
+func generateNewKey(stor storage.URLStogare) (string, error) {
 	for i := keyGenerationAttemptsLimit; i > 0; i-- {
 		key := utils.GenerateRandomKey()
-		if storage.HasKey(key) {
+		if stor.HasKey(key) {
 			continue
 		}
 		return key, nil

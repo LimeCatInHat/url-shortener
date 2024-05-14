@@ -11,8 +11,8 @@ type URLStogare interface {
 	SaveURLByShortKey(key string, value string)
 }
 
-func (storage MemoryStorage) HasKey(key string) bool {
-	_, found := storage.urls[key]
+func (stor MemoryStorage) HasKey(key string) bool {
+	_, found := stor.urls[key]
 	return found
 }
 
@@ -20,13 +20,13 @@ func GetStorage() MemoryStorage {
 	return MemoryStorage{urls: make(map[string]string)}
 }
 
-func (storage MemoryStorage) TryGetFullURL(key string) (bool, string) {
-	value, found := storage.urls[key]
+func (stor MemoryStorage) TryGetFullURL(key string) (bool, string) {
+	value, found := stor.urls[key]
 	return found, value
 }
 
-func (storage MemoryStorage) TryGetShortKey(fullURL string) (bool, string) {
-	for key, value := range storage.urls {
+func (stor MemoryStorage) TryGetShortKey(fullURL string) (bool, string) {
+	for key, value := range stor.urls {
 		if value == fullURL {
 			return true, key
 		}
@@ -34,6 +34,6 @@ func (storage MemoryStorage) TryGetShortKey(fullURL string) (bool, string) {
 	return false, ""
 }
 
-func (storage MemoryStorage) SaveURLByShortKey(key string, value string) {
-	storage.urls[key] = value
+func (stor MemoryStorage) SaveURLByShortKey(key string, value string) {
+	stor.urls[key] = value
 }

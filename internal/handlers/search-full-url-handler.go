@@ -8,9 +8,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func SearchFullURLHandler(writer http.ResponseWriter, request *http.Request, storage storage.URLStogare) {
+func SearchFullURLHandler(writer http.ResponseWriter, request *http.Request, stor storage.URLStogare) {
 	shortKey := chi.URLParam(request, "key")
-	isFound, fullURL := app.TryGetFullURL([]byte(shortKey), storage)
+	isFound, fullURL := app.TryGetFullURL([]byte(shortKey), stor)
 	if isFound {
 		writer.Header().Add("Location", fullURL)
 		writer.WriteHeader(http.StatusTemporaryRedirect)
