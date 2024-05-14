@@ -1,10 +1,13 @@
 module github.com/LimeCatInHat/url-shortener
 
-go 1.21.6
+go 1.22.3
 
 require github.com/stretchr/testify v1.9.0
 
-require golang.org/x/net v0.25.0 // indirect
+require (
+	github.com/google/uuid v1.6.0 // indirect
+	golang.org/x/net v0.25.0 // indirect
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

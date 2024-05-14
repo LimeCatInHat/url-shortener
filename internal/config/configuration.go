@@ -1,8 +1,8 @@
 package config
 
 import (
-	"errors"
 	"flag"
+	"fmt"
 	"net"
 	"net/url"
 	"os"
@@ -15,24 +15,29 @@ type AppConfiguration struct {
 	ShortenLinksBaseURL string
 }
 
-var AppSettings = AppConfiguration{
+var appConfiguration = AppConfiguration{
 	SrvAddr:             ":8080",
 	ShortenLinksBaseURL: "http://localhost:8080/",
 }
 
-func SetConfiguration() {
-	parseFlags()
-	setAddressFromServerVariable("SERVER_ADDRESS", &AppSettings.SrvAddr, false)
-	setAddressFromServerVariable("BASE_URL", &AppSettings.ShortenLinksBaseURL, true)
+func Init() AppConfiguration {
+	parseFlags(&appConfiguration)
+	setAddressFromServerVariable("SERVER_ADDRESS", &appConfiguration.SrvAddr, false)
+	setAddressFromServerVariable("BASE_URL", &appConfiguration.ShortenLinksBaseURL, true)
+	return appConfiguration
 }
 
-func parseFlags() {
+func GetConfiguration() AppConfiguration {
+	return appConfiguration
+}
+
+func parseFlags(config *AppConfiguration) {
 	flag.Func("a", "http server address", func(flagValue string) error {
 		value, err := getAddr(flagValue, false)
 		if err != nil {
 			return err
 		}
-		AppSettings.SrvAddr = value
+		config.SrvAddr = value
 		return nil
 	})
 	flag.Func("b", "shorten url base address", func(flagValue string) error {
@@ -40,14 +45,15 @@ func parseFlags() {
 		if err != nil {
 			return err
 		}
-		AppSettings.ShortenLinksBaseURL = value
+		config.ShortenLinksBaseURL = value
 		return nil
 	})
 	flag.Parse()
 }
 
 func setAddressFromServerVariable(variableName string, configValueSource *string, needTrailingSlash bool) {
-	if envValue := os.Getenv(variableName); envValue != "" {
+	envValue, exists := os.LookupEnv(variableName)
+	if exists {
 		result, err := getAddr(envValue, needTrailingSlash)
 		if err == nil {
 			*configValueSource = result
@@ -69,7 +75,7 @@ func getIPBasedAddress(value string) (string, error) {
 		if isLocalHost(parts[0]) || net.ParseIP(parts[0]) != nil {
 			return value, nil
 		}
-		return value, errors.New("no ip address")
+		return value, fmt.Errorf(`ip address %q seems to be malformatted`, value)
 	}
 	if len(parts) == 2 {
 		_, err := strconv.Atoi(parts[1])
@@ -80,14 +86,14 @@ func getIPBasedAddress(value string) (string, error) {
 			}
 		}
 	}
-	return value, errors.New("no ip address")
+	return value, fmt.Errorf(`ip address %q seems to be malformatted`, value)
 }
 
 func getWellFormedRequestURL(value string, needTrailingSlash bool) (string, error) {
 	url, err := url.ParseRequestURI(value)
 	isCorrect := err == nil && url.Host != ""
 	if !isCorrect {
-		return value, errors.New("invalid url")
+		return value, fmt.Errorf(`%q is not valid URL`, value)
 	}
 	result := url.String()
 	if !needTrailingSlash || strings.HasSuffix(result, "/") {

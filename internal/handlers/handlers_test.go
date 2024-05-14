@@ -5,9 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/LimeCatInHat/url-shortener/internal/app"
 	"github.com/LimeCatInHat/url-shortener/internal/storage"
-	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +30,7 @@ type response struct {
 }
 
 func TestURLShorterHandler(t *testing.T) {
-	srv := configureServer()
+	srv := configureServer(storage.GetStorage())
 	defer srv.Close()
 
 	tests := []searchURLTestDescriptor{{
@@ -93,8 +91,8 @@ func TestURLShorterHandler(t *testing.T) {
 }
 
 func TestSearchFullURLHandler(t *testing.T) {
-	configureMemoryStorage(map[string]string{"1e3271ede129813": "https://yandex.ru/"})
-	srv := configureServer()
+	storage := configureMemoryStorage(map[string]string{"1e3271ede129813": "https://yandex.ru/"})
+	srv := configureServer(storage)
 	defer srv.Close()
 
 	tests := []searchURLTestDescriptor{{
@@ -163,22 +161,21 @@ func TestSearchFullURLHandler(t *testing.T) {
 	}
 }
 
-func configureMemoryStorage(records map[string]string) {
-	stor := storage.AppMemoryStorage
-	app.ConfigureStorage(stor)
+func configureMemoryStorage(records map[string]string) storage.MemoryStorage {
+	stor := storage.GetStorage()
 	for itemKey, itemValue := range records {
 		stor.SaveURLByShortKey(itemKey, itemValue)
 	}
+	return stor
 }
 
-func configureServer() *httptest.Server {
+func configureServer(storage storage.URLStogare) *httptest.Server {
 	r := chi.NewRouter()
-	r.Use(middleware.URLFormat)
 	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
-		URLShorterHandler(writer, request)
+		URLShorterHandler(writer, request, storage)
 	})
 	r.Get("/{key}", func(writer http.ResponseWriter, request *http.Request) {
-		SearchFullURLHandler(writer, request)
+		SearchFullURLHandler(writer, request, storage)
 	})
 	return httptest.NewServer(r)
 }

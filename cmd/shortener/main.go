@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/LimeCatInHat/url-shortener/internal/config"
@@ -8,11 +9,11 @@ import (
 )
 
 func main() {
-	config.SetConfiguration()
+	configuration := config.Init()
 	r := routes.ConfigureRouter()
 
-	err := http.ListenAndServe(config.AppSettings.SrvAddr, r)
+	err := http.ListenAndServe(configuration.SrvAddr, r)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

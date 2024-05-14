@@ -5,9 +5,10 @@ import (
 	"net/http"
 
 	"github.com/LimeCatInHat/url-shortener/internal/app"
+	"github.com/LimeCatInHat/url-shortener/internal/storage"
 )
 
-func URLShorterHandler(writer http.ResponseWriter, request *http.Request) {
+func URLShorterHandler(writer http.ResponseWriter, request *http.Request, storage storage.URLStogare) {
 	if request.ContentLength == 0 {
 		http.Error(writer, "Invalid Content Length", http.StatusBadRequest)
 		return
@@ -19,7 +20,10 @@ func URLShorterHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	urlResult := app.ShortenURL(body)
+	urlResult, err := app.ShortenURL(body, storage)
+	if err != nil {
+		http.Error(writer, "Attempt to generate short link failed", http.StatusInternalServerError)
+	}
 
 	writer.Header().Add("Content-Type", "text/plain")
 	writer.WriteHeader(http.StatusCreated)

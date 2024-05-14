@@ -1,16 +1,9 @@
 package utils
 
-import (
-	"hash/fnv"
-	"strconv"
-)
+import "github.com/google/uuid"
 
-func hash(value []byte) uint64 {
-	h := fnv.New64a()
-	h.Write(value)
-	return h.Sum64()
-}
+const keyLength = 12
 
-func GenerateKey(value []byte) string {
-	return strconv.FormatUint(hash(value), 16)
+func GenerateRandomKey() string {
+	return uuid.NewString()[:keyLength]
 }
