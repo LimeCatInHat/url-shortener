@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func SearchFullURLHandler(writer http.ResponseWriter, request *http.Request, stor app.URLStogare) {
+func SearchFullURLHandler(writer http.ResponseWriter, request *http.Request, stor app.URLStorage) {
 	shortKey := chi.URLParam(request, "key")
 	fullURL, err := app.GetFullURL([]byte(shortKey), stor)
 	if err == nil {

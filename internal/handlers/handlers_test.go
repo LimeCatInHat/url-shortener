@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -73,7 +74,8 @@ func TestURLShorterHandler(t *testing.T) {
 }
 
 func TestSearchFullURLHandler(t *testing.T) {
-	stor := configureMemoryStorage(map[string]string{"1e3271ede129813": "https://yandex.ru/"})
+	stor, err := configureMemoryStorage(map[string]string{"1e3271ede129813": "https://yandex.ru/"})
+	require.NoError(t, err, "torage configuration step failed")
 	srv := configureServer(stor)
 	defer srv.Close()
 
@@ -147,15 +149,18 @@ func runTest(t *testing.T, srv *httptest.Server, test *searchURLTestDescriptor) 
 	})
 }
 
-func configureMemoryStorage(records map[string]string) storage.MemoryStorage {
+func configureMemoryStorage(records map[string]string) (storage.MemoryStorage, error) {
 	stor := storage.GetStorage()
-	for itemKey, itemValue := range records {
-		stor.SaveURLByShortKey(itemKey, itemValue)
+	for shortURL, fullURL := range records {
+		err := stor.SaveURL(fullURL, shortURL)
+		if err != nil {
+			return stor, errors.New("attempt to configure storage failed")
+		}
 	}
-	return stor
+	return stor, nil
 }
 
-func configureServer(stor app.URLStogare) *httptest.Server {
+func configureServer(stor app.URLStorage) *httptest.Server {
 	r := chi.NewRouter()
 	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
 		URLShorterHandler(writer, request, stor)

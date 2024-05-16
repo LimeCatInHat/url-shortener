@@ -10,29 +10,26 @@ import (
 
 const keyGenerationAttemptsLimit = 5
 
-type URLStogare interface {
-	HasKey(key string) bool
-	GetFullURL(key string) (string, error)
-	GetShortKey(fullURL string) (string, error)
-	SaveURLByShortKey(key string, value string)
+type URLStorage interface {
+	GetFullURL(shortURL string) (string, error)
+	GetShortURL(fullURL string) (string, error)
+	SaveURL(fullURL string, shortURL string) error
 }
 
-func ShortenURL(url []byte, stor URLStogare) (string, error) {
-	value, err := stor.GetShortKey(string(url))
+func ShortenURL(url []byte, stor URLStorage) (string, error) {
+	value, err := stor.GetShortURL(string(url))
 	if err == nil {
 		return getShortenURL(value), nil
 	}
 
-	key, err := generateNewKey(stor)
+	key, err := generateShortKey(stor, url)
 	if err != nil {
 		return "", err
 	}
-
-	stor.SaveURLByShortKey(key, string(url))
 	return getShortenURL(key), nil
 }
 
-func GetFullURL(key []byte, stor URLStogare) (string, error) {
+func GetFullURL(key []byte, stor URLStorage) (string, error) {
 	url, err := stor.GetFullURL(string(key))
 	if err != nil {
 		return "", fmt.Errorf("getting full url failed: %w", err)
@@ -45,11 +42,12 @@ func getShortenURL(key string) string {
 	return baseURL + key
 }
 
-func generateNewKey(stor URLStogare) (string, error) {
+func generateShortKey(stor URLStorage, url []byte) (string, error) {
 	for range keyGenerationAttemptsLimit {
-		key := utils.GenerateRandomKey()
-		if !stor.HasKey(key) {
-			return key, nil
+		shortURL := utils.GenerateRandomKey()
+		err := stor.SaveURL(string(url), shortURL)
+		if err == nil {
+			return shortURL, nil
 		}
 	}
 	return "", errors.New("max attempts count to generate new key exceeded")
