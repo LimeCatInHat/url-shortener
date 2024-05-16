@@ -46,7 +46,7 @@ func getShortenURL(key string) string {
 }
 
 func generateNewKey(stor URLStogare) (string, error) {
-	for i := keyGenerationAttemptsLimit; i > 0; i-- {
+	for range keyGenerationAttemptsLimit {
 		key := utils.GenerateRandomKey()
 		if !stor.HasKey(key) {
 			return key, nil
