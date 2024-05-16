@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/LimeCatInHat/url-shortener/internal/app"
 	"github.com/LimeCatInHat/url-shortener/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
@@ -154,7 +155,7 @@ func configureMemoryStorage(records map[string]string) storage.MemoryStorage {
 	return stor
 }
 
-func configureServer(stor storage.URLStogare) *httptest.Server {
+func configureServer(stor app.URLStogare) *httptest.Server {
 	r := chi.NewRouter()
 	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
 		URLShorterHandler(writer, request, stor)

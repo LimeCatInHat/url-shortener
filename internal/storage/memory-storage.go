@@ -1,14 +1,15 @@
 package storage
 
+import (
+	"fmt"
+)
+
 type MemoryStorage struct {
 	urls map[string]string
 }
 
-type URLStogare interface {
-	HasKey(key string) bool
-	TryGetFullURL(key string) (isSucceed bool, value string)
-	TryGetShortKey(fullURL string) (isSucceed bool, value string)
-	SaveURLByShortKey(key string, value string)
+func GetStorage() MemoryStorage {
+	return MemoryStorage{urls: make(map[string]string)}
 }
 
 func (stor MemoryStorage) HasKey(key string) bool {
@@ -16,22 +17,21 @@ func (stor MemoryStorage) HasKey(key string) bool {
 	return found
 }
 
-func GetStorage() MemoryStorage {
-	return MemoryStorage{urls: make(map[string]string)}
-}
-
-func (stor MemoryStorage) TryGetFullURL(key string) (bool, string) {
+func (stor MemoryStorage) GetFullURL(key string) (string, error) {
 	value, found := stor.urls[key]
-	return found, value
+	if found {
+		return value, nil
+	}
+	return "", fmt.Errorf("attempt to get full URL for short link '%q' failed", key)
 }
 
-func (stor MemoryStorage) TryGetShortKey(fullURL string) (bool, string) {
+func (stor MemoryStorage) GetShortKey(fullURL string) (string, error) {
 	for key, value := range stor.urls {
 		if value == fullURL {
-			return true, key
+			return key, nil
 		}
 	}
-	return false, ""
+	return "", fmt.Errorf("attempt to get shorten link for '%q' failed", fullURL)
 }
 
 func (stor MemoryStorage) SaveURLByShortKey(key string, value string) {

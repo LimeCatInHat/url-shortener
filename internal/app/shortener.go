@@ -2,17 +2,24 @@ package app
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/LimeCatInHat/url-shortener/internal/config"
-	"github.com/LimeCatInHat/url-shortener/internal/storage"
 	"github.com/LimeCatInHat/url-shortener/internal/utils"
 )
 
 const keyGenerationAttemptsLimit = 5
 
-func ShortenURL(url []byte, stor storage.URLStogare) (string, error) {
-	isFound, value := stor.TryGetShortKey(string(url))
-	if isFound {
+type URLStogare interface {
+	HasKey(key string) bool
+	GetFullURL(key string) (string, error)
+	GetShortKey(fullURL string) (string, error)
+	SaveURLByShortKey(key string, value string)
+}
+
+func ShortenURL(url []byte, stor URLStogare) (string, error) {
+	value, err := stor.GetShortKey(string(url))
+	if err == nil {
 		return getShortenURL(value), nil
 	}
 
@@ -25,8 +32,12 @@ func ShortenURL(url []byte, stor storage.URLStogare) (string, error) {
 	return getShortenURL(key), nil
 }
 
-func TryGetFullURL(key []byte, stor storage.URLStogare) (bool, string) {
-	return stor.TryGetFullURL(string(key))
+func GetFullURL(key []byte, stor URLStogare) (string, error) {
+	url, err := stor.GetFullURL(string(key))
+	if err != nil {
+		return "", fmt.Errorf("getting full url failed: %w", err)
+	}
+	return url, nil
 }
 
 func getShortenURL(key string) string {
@@ -34,13 +45,12 @@ func getShortenURL(key string) string {
 	return baseURL + key
 }
 
-func generateNewKey(stor storage.URLStogare) (string, error) {
+func generateNewKey(stor URLStogare) (string, error) {
 	for i := keyGenerationAttemptsLimit; i > 0; i-- {
 		key := utils.GenerateRandomKey()
-		if stor.HasKey(key) {
-			continue
+		if !stor.HasKey(key) {
+			return key, nil
 		}
-		return key, nil
 	}
 	return "", errors.New("max attempts count to generate new key exceeded")
 }
