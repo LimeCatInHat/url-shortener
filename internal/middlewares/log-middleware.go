@@ -16,7 +16,7 @@ func WithLogging(h http.Handler, log logger.RequestLogger) http.HandlerFunc {
 
 		duration := time.Since(start)
 
-		log.LogRequestInfo(duration)
+		log.LogRequestInfo("api requested", duration)
 	}
 	return http.HandlerFunc(logFn)
 }

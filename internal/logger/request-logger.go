@@ -10,7 +10,7 @@ import (
 type (
 	RequestLogger struct {
 		logHandler *logHandler
-		baseLogger zap.SugaredLogger
+		baseLogger *zap.SugaredLogger
 	}
 
 	logHandler struct {
@@ -41,10 +41,11 @@ func (requestLogger *RequestLogger) GetLoggingResponseWriter() http.ResponseWrit
 	return requestLogger.logHandler
 }
 
-func (requestLogger *RequestLogger) LogRequestInfo(duration time.Duration) {
+func (requestLogger *RequestLogger) LogRequestInfo(message string, duration time.Duration) {
 	request := requestLogger.logHandler.request
 
-	requestLogger.baseLogger.Infoln(
+	requestLogger.baseLogger.Infow(
+		message,
 		"uri", request.RequestURI,
 		"method", request.Method,
 		"status", requestLogger.logHandler.responseData.status,
@@ -65,6 +66,6 @@ func (r *logHandler) WriteHeader(statusCode int) {
 }
 
 func CreateRequestLogger() (RequestLogger, error) {
-	baseLogger, err := createLogger()
+	baseLogger, err := createLogger("info")
 	return RequestLogger{baseLogger: baseLogger}, err
 }
