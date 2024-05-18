@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -56,8 +57,11 @@ func (requestLogger *RequestLogger) LogRequestInfo(message string, duration time
 
 func (r *logHandler) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
+	if err != nil {
+		return size, fmt.Errorf("attempt to write response faild: %w", err)
+	}
 	r.responseData.size += size
-	return size, err
+	return size, nil
 }
 
 func (r *logHandler) WriteHeader(statusCode int) {

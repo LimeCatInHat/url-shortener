@@ -6,13 +6,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func createLogger(level string) (*zap.SugaredLogger, error) {
-	logger, err := configureLogger(level)
+func createLogger(level string) (logger *zap.SugaredLogger, e error) {
+	zl, err := configureLogger(level)
 	if err != nil {
 		return &zap.SugaredLogger{}, fmt.Errorf("logger initialization failed: %w", err)
 	}
-	defer logger.Sync()
-	return logger.Sugar(), nil
+	return zl.Sugar(), err
 }
 
 func configureLogger(level string) (*zap.Logger, error) {
