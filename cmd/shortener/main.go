@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"log"
@@ -10,8 +10,12 @@ import (
 
 func main() {
 	configuration := config.Init()
-	r := routes.ConfigureRouter()
-	err := http.ListenAndServe(configuration.SrvAddr, r)
+	r, err := routes.ConfigureRouter()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = http.ListenAndServe(configuration.SrvAddr, r)
 
 	if err != nil {
 		log.Fatal(err)
