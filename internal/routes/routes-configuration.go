@@ -1,21 +1,49 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/LimeCatInHat/url-shortener/internal/app"
 	"github.com/LimeCatInHat/url-shortener/internal/handlers"
+	"github.com/LimeCatInHat/url-shortener/internal/logger"
+	"github.com/LimeCatInHat/url-shortener/internal/middlewares"
 	"github.com/LimeCatInHat/url-shortener/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
 
-func ConfigureRouter() http.Handler {
+func ConfigureRouter() (http.Handler, error) {
 	r := chi.NewMux()
-	stor := storage.GetStorage()
-	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
-		handlers.URLShorterHandler(writer, request, stor)
-	})
-	r.Get("/{key}", func(writer http.ResponseWriter, request *http.Request) {
-		handlers.SearchFullURLHandler(writer, request, stor)
-	})
-	return r
+	requestLogger, err := logger.CreateRequestLogger()
+	if err != nil {
+		return nil, fmt.Errorf("request logger wasn't created: %w", err)
+	}
+
+	var stor = storage.GetStorage()
+	r.Post("/", middlewares.WithLogging(shorterHandler(stor), requestLogger))
+	r.Post("/api/shorten", middlewares.WithLogging(apiShorterHandler(stor), requestLogger))
+	r.Get("/{key}", middlewares.WithLogging(urlSearcher(stor), requestLogger))
+
+	return r, nil
+}
+
+func apiShorterHandler(stor app.URLStorage) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		handlers.APIShorterHandler(w, r, stor)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func shorterHandler(stor app.URLStorage) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		handlers.URLShorterHandler(w, r, stor)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func urlSearcher(stor app.URLStorage) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		handlers.SearchFullURLHandler(w, r, stor)
+	}
+	return http.HandlerFunc(fn)
 }
