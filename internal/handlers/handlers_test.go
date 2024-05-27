@@ -20,9 +20,10 @@ type searchURLTestDescriptor struct {
 	want    response
 }
 type request struct {
-	method string
-	path   string
-	body   string
+	method      string
+	path        string
+	body        string
+	contentType string
 }
 
 type response struct {
@@ -66,6 +67,60 @@ func TestURLShorterHandler(t *testing.T) {
 		},
 		want: response{
 			statusCode: http.StatusBadRequest,
+		},
+	}}
+	for _, test := range tests {
+		runTest(t, srv, &test)
+	}
+}
+
+func TestAPIShorterHandler(t *testing.T) {
+	srv := configureServer(storage.GetStorage())
+	defer srv.Close()
+
+	apiShorterPath := "/api/shorten"
+	tests := []searchURLTestDescriptor{{
+		name: "successful shortlink generation",
+		request: request{
+			method: http.MethodPost,
+			body:   "{ \"URL\": \"https://yandex.ru/\"}",
+			path:   apiShorterPath,
+		},
+		want: response{
+			statusCode: http.StatusCreated,
+			body:       "http://localhost:8080/1e3271ede129813",
+			headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		},
+	}, {
+		name: "only POST method type is supported",
+		request: request{
+			method: http.MethodGet,
+			path:   apiShorterPath,
+			body:   "{ \"URL\": \"https://yandex.ru/\"}",
+		},
+		want: response{
+			statusCode: http.StatusMethodNotAllowed,
+		},
+	}, {
+		name: "bad request because of empty body",
+		request: request{
+			method: http.MethodPost,
+			path:   apiShorterPath,
+		},
+		want: response{
+			statusCode: http.StatusBadRequest,
+		},
+	}, {
+		name: "error because of invalid response",
+		request: request{
+			method: http.MethodPost,
+			path:   apiShorterPath,
+			body:   "https://yandex.ru/",
+		},
+		want: response{
+			statusCode: http.StatusInternalServerError,
 		},
 	}}
 	for _, test := range tests {
@@ -165,6 +220,9 @@ func configureServer(stor app.URLStorage) *httptest.Server {
 	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
 		URLShorterHandler(writer, request, stor)
 	})
+	r.Post("/api/shorten", func(writer http.ResponseWriter, request *http.Request) {
+		APIShorterHandler(writer, request, stor)
+	})
 	r.Get("/{key}", func(writer http.ResponseWriter, request *http.Request) {
 		SearchFullURLHandler(writer, request, stor)
 	})
@@ -178,6 +236,9 @@ func buildRequest(srv *httptest.Server, testRequest request) *resty.Request {
 	req.URL = srv.URL + testRequest.path
 	if testRequest.body != "" {
 		req.Body = testRequest.body
+	}
+	if testRequest.contentType != "" {
+		req.SetHeader("Content-Type", testRequest.contentType)
 	}
 	return req
 }

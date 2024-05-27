@@ -11,6 +11,7 @@ func createLogger(level string) (logger *zap.SugaredLogger, e error) {
 	if err != nil {
 		return &zap.SugaredLogger{}, fmt.Errorf("logger initialization failed: %w", err)
 	}
+
 	return zl.Sugar(), err
 }
 

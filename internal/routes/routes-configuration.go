@@ -21,9 +21,17 @@ func ConfigureRouter() (http.Handler, error) {
 
 	var stor = storage.GetStorage()
 	r.Post("/", middlewares.WithLogging(shorterHandler(stor), requestLogger))
+	r.Post("/api/shorten", middlewares.WithLogging(apiShorterHandler(stor), requestLogger))
 	r.Get("/{key}", middlewares.WithLogging(urlSearcher(stor), requestLogger))
 
 	return r, nil
+}
+
+func apiShorterHandler(stor app.URLStorage) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		handlers.APIShorterHandler(w, r, stor)
+	}
+	return http.HandlerFunc(fn)
 }
 
 func shorterHandler(stor app.URLStorage) http.HandlerFunc {
